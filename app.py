@@ -186,8 +186,11 @@ def handle_text(sender_id, user_state, message_text):
                 more_poi = _current_logistics[sender_id]["points"][int(command[1]) - 1]
                 send_message(
                     sender_id,
-                    more_poi["title"] + ":\n" + more_poi["long_description"]
+                    more_poi["title"] + ":"
                 )
+                split_description = more_poi["long_description"][0 + i: 600 + i] for i in range(0, len(more_poi["long_description"], 600))
+                for text in split_description:
+                    send_message(text)
             else:
                 send_message(sender_id, "please enter location index as a number")
         elif command[0] == "stop" && command[1] == "add":
