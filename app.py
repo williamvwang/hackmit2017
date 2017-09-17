@@ -11,6 +11,26 @@ app.config.from_pyfile('settings.cfg')  # load tokens from env
 amadeus_key = app.config["AMADEUS_API_KEY"]
 
 @app.route('/', methods=['GET'])
+
+class POI:
+
+	def __init__(self, location, time):
+		self.location = location
+		self.time = time
+		self.feedback = {
+			'emotion': '',
+			'adjective':'',
+			'memory':''
+		}
+
+
+class Trip:
+
+	def __init__(self, name):
+		self.tripName = name
+		self.visits = []
+		
+
 def verify():
     # when the endpoint is registered as a webhook, it must echo back
     # the 'hub.challenge' value it receives in the query arguments
