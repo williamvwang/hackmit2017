@@ -3,6 +3,7 @@ import sys
 import json
 import threading
 import time
+import random
 import requests
 from flask import Flask, request
 from datetime import datetime
@@ -110,6 +111,26 @@ def run_schedule():
 schedule_thread = threading.Thread(target = run_schedule)
 schedule_thread.start()
 
+def format_flight(result):
+    outbound_flight = result["itineraries"]["outbound"][0]
+    outbound_time = outbound_flight["departs_at"]
+    outbound_loc = outbound_flight["origin"]["airport"]
+    outbound_dest = outbound_flight["destination"]["airport"]
+    outbound_flightnum = " ".join(outbound_flight["marketing_airline"], outbound_flight["flight_number"])
+
+    inbound_flight = result["itineraries"]["inbound"][0]
+    inbound_time = inbound_flight["departs_at"]
+    inbound_loc = inbound_flight["origin"]["airport"]
+    inbound_dest = inbound_flight["destination"]["airport"]
+    inbound_flightnum = " ".join(inbound_flight["marketing_airline"], inbound_flight["flight_number"])
+
+    total_price = result["fare"]["total_price"]
+
+    return "%s-->%s at %s on Flight# %s\n%s-->%s at %s on Flight# %s\nTotal Cost: %s" % (
+        outbound_loc, outbound_dest, outbound_time, outbound_flightnum,
+        inbound_loc, inbound_dest, inbound_time, inbound_flightnum
+    )
+
 # message handlers
 
 def handle_text(sender_id, user_state, message_text):
@@ -162,13 +183,13 @@ def handle_text(sender_id, user_state, message_text):
                 _current_logistics[sender_id]["start_date"], _current_logistics[sender_id]["end_date"]
             )
             results = map(
-                lambda result: {
-                    "departure": result["itineraries"]["outbound"]["flights"]["departs_at"]
-                },
+                lambda result: format_flight(result),
                 flights
             )
             for i in xrange(len(results)):
-                send_message(sender_id, results)
+                send_message(sender_id, 
+                    ("Here are your top 3 direct flight choices:\n" + results[i]) if i == 0 else results[i]
+                )
         elif 'poi' in message_text.lower() or 'points of interest' in message_text.lower():
             send_message(sender_id, "what is the maximum distance (in miles) you are willing to travel from your destination pin?")
             _state[sender_id] = 3.5
@@ -396,10 +417,12 @@ def find_flights(lat_start, long_start, lat_end, long_end, start_date, end_date)
         'origin': start_airport,
         'destination': end_airport,
         'departure_date': start_date,
-        'return_date': end_date
+        'return_date': end_date,
+        'nonstop' : True,
+        'number_of_results': 3
     }
     r = requests.get(low_fare_url, params = payload)
-    return r.json()
+    return r.json()['results']
 
 def find_POI(lat, lon, radius):
     geosearch_url = 'https://api.sandbox.amadeus.com/v1.2/points-of-interest/yapq-search-circle'
