@@ -87,9 +87,10 @@ def run_event():
     send_message(next_event.trip.user, 'congrats! you visisted ' + next_event.location)
     # TODO: randomize question asked
     send_message(next_event.trip.user, 'how did you feel about your experience?')
-    _state[next_event.trip.user] = 5.5
     _current_logistics[next_event.trip.user]['type'] = 'emotion'
     _current_logistics[next_event.trip.user]['current_poi'] = next_event
+    
+    _state[next_event.trip.user] = 5.5
 
 def select_next_event():
     for key, value in current_trip.iteritems():
@@ -259,6 +260,13 @@ def handle_text(sender_id, user_state, message_text):
             current_trip[sender_id].add_location(poi, date)
             send_message(sender_id, poi + " has been added sugoi!")
             _state[sender_id] = 4
+            sender_id,
+                'enter:\n' +
+                '\t"more <num>" to learn more about point of interest <num>\n' +
+                '\t"add <num>" to add point of interest <num> to the trip\n' +
+                '\t"stop add" to finish adding points of interest'
+            )
+
     elif user_state == 5.5:
         answer = message_text.rstrip().lower()
         _current_logistics[sender_id]['current_poi'].add_feedback(_current_logistics[sender_id]['type'], answer)
