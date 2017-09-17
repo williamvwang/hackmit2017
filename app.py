@@ -92,6 +92,8 @@ def run_event():
     _current_logistics[next_event.trip.user]['current_poi'] = next_event
     
     _state[next_event.trip.user] = 5.5
+    #handle_text(next_event.trip.user, _state[next_event.trip.user], "")
+    
 
 def select_next_event():
     for key, value in current_trip.iteritems():
@@ -270,6 +272,7 @@ def handle_text(sender_id, user_state, message_text):
                 send_message(sender_id, poi_entry.location + poi_entry.time.strftime(" on %b %d, %Y at %I:%M %p"))
             send_message(sender_id, "Enjoy your trip! Hope it's as purrfect as me")
             _state[sender_id] = 5
+            run_event()
     elif user_state == 4.5:
         try:
             date = datetime.strptime(message_text.rstrip(), '%m/%d/%y %I:%M %p')
@@ -292,11 +295,44 @@ def handle_text(sender_id, user_state, message_text):
         answer = message_text.rstrip().lower()
         _current_logistics[sender_id]['current_poi'].add_feedback(_current_logistics[sender_id]['type'], answer)
         _current_logistics[sender_id]['current_poi'].mark_complete()
+        send_message(sender_id, "Your response has been recorded!")
         if check_completed_trip(sender_id):
             _state[sender_id] = 6
         else:
             _state[sender_id] = 5
-        select_next_event()
+            select_next_event()
+            run_event()
+    elif user_state == 6:
+        for i in xrange(len(current_trips[sender_id].visits)):
+            if i == 0:
+                send_message(
+                    sender_id, 
+                    "First, you visited " + 
+                    current_trips[sender_id].visits[i].location +
+                    ". You thought it was " +
+                    current_trips[sender_id].visits[i].feedback["emotion"] + "."
+                }
+            elif i == len(current_trips[sender_id].visits) - 1:
+                send_message(
+                    sender_id, 
+                    "Finally, you visited " + 
+                    current_trips[sender_id].visits[i].location +
+                    ". You thought it was " +
+                    current_trips[sender_id].visits[i].feedback["emotion"] + "."
+                }
+            else:
+                send_message(
+                    sender_id, 
+                    "Then, you visited " + 
+                    current_trips[sender_id].visits[i].location +
+                    ". You thought it was " +
+                    current_trips[sender_id].visits[i].feedback["emotion"] + "."
+                }
+        send_message(sender_id, "It sounds like you had a great trip. Come back and chat with me again!")
+        _state[sender_id] = -1
+
+
+                            
         
         
 
