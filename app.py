@@ -12,7 +12,6 @@ app.config.from_pyfile('settings.cfg')  # load tokens from env
 
 amadeus_key = app.config["AMADEUS_API_KEY"]
 
-@app.route('/', methods=['GET'])
 
 class POI:
 
@@ -28,32 +27,36 @@ class POI:
 
 class Trip:
 
-    def __init__(self, name):
-        self.tripName = name
+    def __init__(self, name, user_id):
+        self.trip_name = name
         self.visits = []
+        self.user = user_id
 
     def addLocation(self, location, time):
         poi = POI(location, time)
         visits.append(poi)
         visits.sort(key = lambda x: x.time)
         
-nextEvent = None
+next_event = None
+all_trips = {}
+current_trip = {}
 
-def runSchedule():
+def run_schedule():
     while True:
-        if nextEvent is None:
+        if next_event is None:
             time.sleep(1)
         else:
-            while datetime.datetime.now() < nextEvent.time:
+            while datetime.datetime.now() < next_event.time:
                 time.sleep(1)
-            runEvent(nextEvent)
-            nextEvent = None
+            run_event(next_event)
+            next_event = None
 
-scheduleThread = threading.Thread(target = runSchedule)
-scheduleThread.start()
+schedule_thread = threading.Thread(target = run_schedule)
+schedule_thread.start()
     
 		
 
+@app.route('/', methods=['GET'])
 def verify():
     # when the endpoint is registered as a webhook, it must echo back
     # the 'hub.challenge' value it receives in the query arguments
@@ -79,9 +82,19 @@ def handle_text(sender_id, user_state, message_text):
     # user is greeted
     elif user_state == 0:
         if message_text.rstrip().lower() == 'start trip':
-            send_message(sender_id, 'where would you like to go? send a location pin owo')
+            send_message(sender_id, 'what would you like to call this trip?')
+            _state[sender_id] = 0.5
         else:
             send_message(sender_id, "that's not a valid command nyaa >:(")
+    elif user_state == 0.5:
+        name = message_text.rstrip()
+        trip = Trip(name, sender_id)
+        current_trip[sender_id] = trip
+        if sender_id not in all_trips:
+            all_trips[sender_id] = [trip]
+        else:
+            all_trips[sender_id] = all_trips[sender_id].append(trip)
+        send_message(sender_id, 'where would you like to go? send a location pin owo')
     # destination entered, awaiting dates
     elif user_state == 2:
         dates = message_text.rstrip().split(" ")
@@ -136,7 +149,7 @@ def handle_text(sender_id, user_state, message_text):
 def handle_attachments(sender_id, user_state, message):    
     # Location
     if message["attachments"][0]["type"] == "location":
-        if user_state == 0:
+        if user_state == 0.5:
             location = message["attachments"][0]["payload"]["coordinates"]
             _state[sender_id] = 1
             # store destination location
