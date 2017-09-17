@@ -41,8 +41,8 @@ class Trip:
             next_event = poi
         elif poi.time < next_event.time:
             next_event = poi
-        visits.append(poi)
-        visits.sort(key = lambda x: x.time)
+        self.visits.append(poi)
+        self.visits.sort(key = lambda x: x.time)
         
 all_trips = {}
 current_trip = {}
