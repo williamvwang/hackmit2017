@@ -124,7 +124,7 @@ def handle_text(sender_id, user_state, message_text):
             #         _current_logistics[sender_id]["start_date"], _current_logistics[sender_id]["end_date"]
             #     )
             send_message(sender_id, "zoooooom")
-        elif 'poi' in message_text.lower():
+        elif 'poi' in message_text.lower() or 'points of interest' in message_text.lower():
             send_message(sender_id, "what is the maximum distance (in miles) you are willing to travel from your destination pin?")
             _state[sender_id] = 3.5
     # setting PoI radius
@@ -132,10 +132,13 @@ def handle_text(sender_id, user_state, message_text):
         if message_text.isdigit():
             radius = int(float(message_text) / 1.609344)
             _current_logistics[sender_id]["radius"] = radius
-            raw_points = findPOI(_current_logistics[sender_id]["destination"][0], _current_logistics[sender_id]["destination"][1], radius)
+            raw_points = find_POI(_current_logistics[sender_id]["destination"][0], _current_logistics[sender_id]["destination"][1], radius)
             points = map(
                 lambda point: {
-                    "title" : point["title"], "grade" : point["grades"]["yapq_grade"], "short_description": point["details"]["short_description"]
+                    "title" : point["title"], 
+                    "grade" : point["grades"]["yapq_grade"], 
+                    "short_description": point["details"]["short_description"],
+                    "long_description": point["details"]["description"]
                 },
                 raw_points
             )
@@ -144,7 +147,46 @@ def handle_text(sender_id, user_state, message_text):
                 send_message(sender_id,
                     ("%s. %s (%s/5 stars):\n%s" % (str(i + 1), points[i]["title"], str(points[i]["grade"]), points[i]["short_description"]))
                 )
-            
+            send_message(
+                sender_id,
+                'enter:\n' +
+                '\t"more <num>" to learn more about point of interest <num>\n' +
+                '\t"add <num>" to add point of interest <num> to the trip' +
+                '\t"stop add" to finish adding points of interest'
+            )
+            _state[sender_id] = 4
+    elif user_state == 4:
+        command = message_text.rstrip().lower().split(" ")
+        if len(command) > 2:
+            send_message(sender_id, "invalid command ugu")
+        elif command[0] == "add":
+            if command[1].isdigit():
+                _current_logistics[sender_id]["poi_id"] = int(command[1])
+                send_message(
+                    sender_id,
+                    "when would you like to visit? (format as MM/DD/YY HH:MM)"
+                )
+                _state[sender_id] = 4.5
+            else:
+                send_message(sender_id, "please enter location index as a number")
+        elif command[0] == "more":
+            if command[1].isdigit():
+                more_poi = _current_logistics[sender_id]["points"][int(command[1])]
+                send_message(
+                    sender_id,
+                    more_poi["title"] + ":\n" + more_poi["long_description"]
+                )
+            else:
+                send_message(sender_id, "please enter location index as a number")
+        elif command[0] == "stop" && command[1] == "add":
+            send_message(sender_id, "your schedule is as follows:")
+            for i in xrange(len(current_trip[sender_id])):
+                poi_entry = current_trip[sender_id][i]
+                send_message(sender_id, poi_entry.location + poi_entry.time.strftime(" on %b %d, %Y at %I:%M %p"))
+            send_message(sender_id, "enjoy your trip!")
+            _state[sender_id] = 5
+
+
 
 def handle_attachments(sender_id, user_state, message):    
     # Location
@@ -251,7 +293,7 @@ def log(message):  # simple wrapper for logging to stdout on heroku
     print str(message)
     sys.stdout.flush()
 
-def findAirport(lat, lon):
+def find_airport(lat, lon):
     nearest_airport_url = 'https://api.sandbox.amadeus.com/v1.2/airports/nearest-relevant'
     payload = {
         'apikey': amadeus_key,
@@ -260,7 +302,7 @@ def findAirport(lat, lon):
     }
     return r.json()[0]['airport']
 
-def findFlights(lat_start, long_start, lat_end, long_end, start_date, end_date):
+def find_flights(lat_start, long_start, lat_end, long_end, start_date, end_date):
     low_fare_url = 'https://api.sandbox.amadeus.com/v1.2/flights/low-fare-search'
     start_airport = findAirport(lat_start, long_start)
     end_airport = findAirport(lat_end, long_end)
@@ -274,7 +316,7 @@ def findFlights(lat_start, long_start, lat_end, long_end, start_date, end_date):
     r = requests.get(low_fare_url, params = payload)
     return r.json()
 
-def findPOI(lat, lon, radius):
+def find_POI(lat, lon, radius):
     geosearch_url = 'https://api.sandbox.amadeus.com/v1.2/points-of-interest/yapq-search-circle'
     max_results = 5
     payload = {
