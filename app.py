@@ -129,9 +129,10 @@ def format_flight(result):
 
     total_price = result["fare"]["total_price"]
 
-    return "%s-->%s at %s on Flight# %s\n%s-->%s at %s on Flight# %s\nTotal Cost: %s" % (
+    return "%s-->%s at %s on Flight# %s\n%s-->%s at %s on Flight# %s\nTotal Cost: $%s" % (
         outbound_loc, outbound_dest, outbound_time, outbound_flightnum,
-        inbound_loc, inbound_dest, inbound_time, inbound_flightnum
+        inbound_loc, inbound_dest, inbound_time, inbound_flightnum,
+        total_price
     )
 
 # message handlers
@@ -191,7 +192,7 @@ def handle_text(sender_id, user_state, message_text):
             )
             for i in xrange(len(results)):
                 send_message(sender_id, 
-                    ("Here are your top 3 direct flight choices:\n" + results[i]) if i == 0 else results[i]
+                    ("Here are your direct flight choices:\n" + results[i]) if i == 0 else results[i]
                 )
         elif 'poi' in message_text.lower() or 'points of interest' in message_text.lower():
             send_message(sender_id, "What is the maximum distance (in miles) you are willing to travel from your destination pin?")
@@ -311,7 +312,7 @@ def handle_text(sender_id, user_state, message_text):
                     current_trips[sender_id].visits[i].location +
                     ". You thought it was " +
                     current_trips[sender_id].visits[i].feedback["emotion"] + "."
-                }
+                )
             elif i == len(current_trips[sender_id].visits) - 1:
                 send_message(
                     sender_id, 
@@ -319,7 +320,7 @@ def handle_text(sender_id, user_state, message_text):
                     current_trips[sender_id].visits[i].location +
                     ". You thought it was " +
                     current_trips[sender_id].visits[i].feedback["emotion"] + "."
-                }
+                )
             else:
                 send_message(
                     sender_id, 
@@ -327,15 +328,9 @@ def handle_text(sender_id, user_state, message_text):
                     current_trips[sender_id].visits[i].location +
                     ". You thought it was " +
                     current_trips[sender_id].visits[i].feedback["emotion"] + "."
-                }
+                )
         send_message(sender_id, "It sounds like you had a great trip. Come back and chat with me again!")
         _state[sender_id] = -1
-
-
-                            
-        
-        
-
 
 def handle_attachments(sender_id, user_state, message):    
     # Location
@@ -466,6 +461,7 @@ def find_flights(lat_start, long_start, lat_end, long_end, start_date, end_date)
         'number_of_results': 3
     }
     r = requests.get(low_fare_url, params = payload)
+    print r.json()
     return r.json()['results']
 
 def find_POI(lat, lon, radius):
@@ -481,8 +477,6 @@ def find_POI(lat, lon, radius):
     r = requests.get(geosearch_url, params = payload)
     return r.json()['points_of_interest']
     
-    
-
 
 if __name__ == '__main__':
     app.run(debug=True)
