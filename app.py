@@ -16,15 +16,22 @@ next_event = None
 
 class POI:
 
-    def __init__(self, location, time):
+    def __init__(self, location, time, trip):
         self.location = location
         self.time = time
         self.completed = False
+        self.trip = trip
         self.feedback = {
             'emotion': '',
             'adjective': '',
             'memory': ''
         }
+
+    def add_feedback(classification, answer):
+        self.feedback[classification] = answer
+
+    def mark_complete():
+        self.completed = True
 
 class Trip:
 
@@ -34,7 +41,7 @@ class Trip:
         self.user = user_id
 
     def add_location(self, location, time):
-        poi = POI(location, time)
+        poi = POI(location, time, self)
         global next_event
         if next_event is None:
             next_event = poi
@@ -67,10 +74,28 @@ def verify():
 _state = {}
 _current_logistics = {}
 
+def check_completed_trip(sender_id):
+    completed = True
+    trip = current_trip[sender_id]
+    for poi in trip.visits:
+        if not poi.completed:
+            completed = False
+            break
+    return completed
 
-# def run_event():
+def run_event():
+    send_message(next_event.trip.user, 'congrats! you visisted ' + next_event.location)
+    # TODO: randomize question asked
+    send_message(next_event.trip.user, 'how did you feel about your experience?')
+    _state[next_event.trip.user] = 5.5
+    _current_logistics[next_event.trip.user]['type'] = 'emotion'
+    _current_logistics[next_event.trip.user]['current_poi'] = next_event
 
-
+def select_next_event():
+    for key, value in current_trip.iteritems():
+        for poi in value.visits:
+            if next_event is None or (poi.time < next_event.time and not poi.completed):
+                next_event = poi
 
 def run_schedule():
     while True:
@@ -79,7 +104,7 @@ def run_schedule():
         else:
             while datetime.datetime.now() < next_event.time:
                 time.sleep(1)
-            run_event(next_event)
+            run_event()
             next_event = None
 
 schedule_thread = threading.Thread(target = run_schedule)
@@ -189,6 +214,13 @@ def handle_text(sender_id, user_state, message_text):
                 _state[sender_id] = 4.5
             else:
                 send_message(sender_id, "please enter location index as a number")
+                send_message(
+                    sender_id,
+                    'enter:\n' +
+                    '\t"more <num>" to learn more about point of interest <num>\n' +
+                    '\t"add <num>" to add point of interest <num> to the trip\n' +
+                    '\t"stop add" to finish adding points of interest'
+                )
         elif command[0] == "more":
             if command[1].isdigit():
                 more_poi = _current_logistics[sender_id]["points"][int(command[1]) - 1]
@@ -201,6 +233,14 @@ def handle_text(sender_id, user_state, message_text):
                     send_message(sender_id, text)
             else:
                 send_message(sender_id, "please enter location index as a number")
+            send_message(
+            sender_id,
+                'enter:\n' +
+                '\t"more <num>" to learn more about point of interest <num>\n' +
+                '\t"add <num>" to add point of interest <num> to the trip\n' +
+                '\t"stop add" to finish adding points of interest'
+            )
+
         elif command[0] == "stop" and command[1] == "add":
             send_message(sender_id, "your schedule is as follows:")
             for i in xrange(len(current_trip[sender_id].visits)):
@@ -219,6 +259,15 @@ def handle_text(sender_id, user_state, message_text):
             current_trip[sender_id].add_location(poi, date)
             send_message(sender_id, poi + " has been added sugoi!")
             _state[sender_id] = 4
+    elif user_state == 5.5:
+        answer = message_text.rstrip().lower()
+        _current_logistics[sender_id]['current_poi'].add_feedback(_current_logistics[sender_id]['type'], answer)
+        _current_logistics[sender_id]['current_poi'].mark_complete()
+        if check_completed_trip(sender_id):
+            _state[sender_id] = 6
+        else:
+            _state[sender_id] = 5
+        select_next_event()
         
         
 
