@@ -202,8 +202,8 @@ def handle_text(sender_id, user_state, message_text):
                 send_message(sender_id, "please enter location index as a number")
         elif command[0] == "stop" and command[1] == "add":
             send_message(sender_id, "your schedule is as follows:")
-            for i in xrange(len(current_trip[sender_id])):
-                poi_entry = current_trip[sender_id][i]
+            for i in xrange(len(current_trip[sender_id].visits)):
+                poi_entry = current_trip[sender_id].visits[i]
                 send_message(sender_id, poi_entry.location + poi_entry.time.strftime(" on %b %d, %Y at %I:%M %p"))
             send_message(sender_id, "enjoy your trip! itterasshai ~")
             _state[sender_id] = 5
