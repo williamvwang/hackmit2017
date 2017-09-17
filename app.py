@@ -12,6 +12,7 @@ app.config.from_pyfile('settings.cfg')  # load tokens from env
 
 amadeus_key = app.config["AMADEUS_API_KEY"]
 
+next_event = None
 
 class POI:
 
@@ -34,25 +35,19 @@ class Trip:
 
     def add_location(self, location, time):
         poi = POI(location, time)
+        if next_event is None:
+            next_event = poi
+        elif next_event.completed:
+            next_event = poi
+        elif poi.time < next_event.time:
+            next_event = poi
         visits.append(poi)
         visits.sort(key = lambda x: x.time)
         
-next_event = None
 all_trips = {}
 current_trip = {}
 
-def run_schedule():
-    while True:
-        if next_event is None:
-            time.sleep(1)
-        else:
-            while datetime.datetime.now() < next_event.time:
-                time.sleep(1)
-            run_event(next_event)
-            next_event = None
 
-schedule_thread = threading.Thread(target = run_schedule)
-schedule_thread.start()
     
 		
 
@@ -71,6 +66,23 @@ def verify():
 _state = {}
 _current_logistics = {}
 
+
+def run_event():
+
+
+
+def run_schedule():
+    while True:
+        if next_event is None:
+            time.sleep(1)
+        else:
+            while datetime.datetime.now() < next_event.time:
+                time.sleep(1)
+            run_event(next_event)
+            next_event = None
+
+schedule_thread = threading.Thread(target = run_schedule)
+schedule_thread.start()
 
 # message handlers
 
@@ -151,7 +163,7 @@ def handle_text(sender_id, user_state, message_text):
                 sender_id,
                 'enter:\n' +
                 '\t"more <num>" to learn more about point of interest <num>\n' +
-                '\t"add <num>" to add point of interest <num> to the trip' +
+                '\t"add <num>" to add point of interest <num> to the trip\n' +
                 '\t"stop add" to finish adding points of interest'
             )
             _state[sender_id] = 4
@@ -161,7 +173,7 @@ def handle_text(sender_id, user_state, message_text):
             send_message(sender_id, "invalid command ugu")
         elif command[0] == "add":
             if command[1].isdigit():
-                _current_logistics[sender_id]["poi_id"] = int(command[1])
+                _current_logistics[sender_id]["poi_id"] = int(command[1]) - 1
                 send_message(
                     sender_id,
                     'when would you like to visit? (format as "MM/DD/YY HH:MM AM or PM")'
@@ -171,7 +183,7 @@ def handle_text(sender_id, user_state, message_text):
                 send_message(sender_id, "please enter location index as a number")
         elif command[0] == "more":
             if command[1].isdigit():
-                more_poi = _current_logistics[sender_id]["points"][int(command[1])]
+                more_poi = _current_logistics[sender_id]["points"][int(command[1]) - 1]
                 send_message(
                     sender_id,
                     more_poi["title"] + ":\n" + more_poi["long_description"]
