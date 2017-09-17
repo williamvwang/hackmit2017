@@ -35,6 +35,7 @@ class Trip:
 
     def add_location(self, location, time):
         poi = POI(location, time)
+        global next_event
         if next_event is None:
             next_event = poi
         elif next_event.completed:
@@ -67,7 +68,7 @@ _state = {}
 _current_logistics = {}
 
 
-def run_event():
+# def run_event():
 
 
 
@@ -301,7 +302,7 @@ def webhook():
 
 def send_message(recipient_id, message_text):
 
-    log("sending message to {recipient}: {text}".format(recipient=recipient_id, text=message_text))
+    log("sending message to {recipient}: {text}".format(recipient=recipient_id, text=message_text.encode('utf-8')))
 
     params = {
         "access_token": app.config["PAGE_ACCESS_TOKEN"]
@@ -314,7 +315,7 @@ def send_message(recipient_id, message_text):
             "id": recipient_id
         },
         "message": {
-            "text": message_text
+            "text": message_text.encode('utf-8')
         }
     })
     r = requests.post("https://graph.facebook.com/v2.6/me/messages", params=params, headers=headers, data=data)
