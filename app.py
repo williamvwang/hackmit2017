@@ -286,7 +286,7 @@ def handle_text(sender_id, user_state, message_text):
             send_message(sender_id, poi + " has been added!")
             _state[sender_id] = 4
             send_message(sender_id,
-                'enter:\n' +
+                'Enter:\n' +
                 '\t"more <num>" to learn more about point of interest <num>\n' +
                 '\t"add <num>" to add point of interest <num> to the trip\n' +
                 '\t"stop add" to finish adding points of interest'
