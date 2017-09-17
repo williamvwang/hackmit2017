@@ -123,19 +123,26 @@ def handle_text(sender_id, user_state, message_text):
                     send_message(sender_id, "aho, you can't go back in time >:(")
                 else:
                     # store dates
-                    _current_logistics[sender_id]["start_date"] = start_date
-                    _current_logistics[sender_id]["end_date"] = end_date
+                    _current_logistics[sender_id]["start_date"] = start_date.strftime("20%y-%m-%d")
+                    _current_logistics[sender_id]["end_date"] = end_date.strftime("20%y-%m-%d")
                     send_message(sender_id, "would you like to search for flights or points of interest?")
                     _state[sender_id] = 3 
     # flights or PoI?
     elif user_state == 3:
         if 'flights' in message_text.lower():
-            # flights = findFlights(
-            #         _current_logistics[sender_id]["origin"][0], _current_logistics[sender_id]["origin"][1],
-            #         _current_logistics[sender_id]["destination"][0], _current_logistics[sender_id]["destination"][1],
-            #         _current_logistics[sender_id]["start_date"], _current_logistics[sender_id]["end_date"]
-            #     )
-            send_message(sender_id, "zoooooom")
+            flights = findFlights(
+                _current_logistics[sender_id]["origin"][0], _current_logistics[sender_id]["origin"][1],
+                _current_logistics[sender_id]["destination"][0], _current_logistics[sender_id]["destination"][1],
+                _current_logistics[sender_id]["start_date"], _current_logistics[sender_id]["end_date"]
+            )
+            results = map(
+                lambda result: {
+                    "departure": result["itineraries"]["outbound"]["flights"]["departs_at"]
+                },
+                flights
+            )
+            for i in xrange(len(results)):
+                send_message(sender_id, results)
         elif 'poi' in message_text.lower() or 'points of interest' in message_text.lower():
             send_message(sender_id, "what is the maximum distance (in miles) you are willing to travel from your destination pin?")
             _state[sender_id] = 3.5
@@ -193,12 +200,12 @@ def handle_text(sender_id, user_state, message_text):
                     send_message(text)
             else:
                 send_message(sender_id, "please enter location index as a number")
-        elif command[0] == "stop" && command[1] == "add":
+        elif command[0] == "stop" and command[1] == "add":
             send_message(sender_id, "your schedule is as follows:")
             for i in xrange(len(current_trip[sender_id])):
                 poi_entry = current_trip[sender_id][i]
                 send_message(sender_id, poi_entry.location + poi_entry.time.strftime(" on %b %d, %Y at %I:%M %p"))
-            send_message(sender_id, "enjoy your trip!")
+            send_message(sender_id, "enjoy your trip! itterasshai ~")
             _state[sender_id] = 5
     elif user_state == 4.5:
         try:
@@ -327,6 +334,7 @@ def find_airport(lat, lon):
         'latitude': lat,
         'longitude': lon
     }
+    r = requests.get(nearest_airport_url, params = payload)
     return r.json()[0]['airport']
 
 def find_flights(lat_start, long_start, lat_end, long_end, start_date, end_date):
