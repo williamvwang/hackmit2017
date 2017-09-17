@@ -85,12 +85,14 @@ def check_completed_trip(sender_id):
     return completed
 
 def run_event():
-    send_message(next_event.trip.user, 'congrats! you visisted ' + next_event.location)
+    send_message(next_event.trip.user, 'Congrats! You visisted ' + next_event.location)
     # TODO: randomize question asked
-    send_message(next_event.trip.user, 'how did you feel about your experience?')
+    send_message(next_event.trip.user, 'How did you feel about your experience?')
     _state[next_event.trip.user] = 5.5
     _current_logistics[next_event.trip.user]['type'] = 'emotion'
     _current_logistics[next_event.trip.user]['current_poi'] = next_event
+    
+    _state[next_event.trip.user] = 5.5
 
 def select_next_event():
     for key, value in current_trip.iteritems():
@@ -136,15 +138,15 @@ def format_flight(result):
 def handle_text(sender_id, user_state, message_text):
     # start anew
     if user_state == -1:
-        send_message(sender_id, 'uwau ~ i am tripbot-chan nyaa! \nto start planning a trip, say "start trip" :3')
+        send_message(sender_id, 'Meow ~ I am TravelCat! \nTo start planning a trip, say "start trip" ≧☉_☉≦')
         _state[sender_id] = 0
     # user is greeted
     elif user_state == 0:
         if message_text.rstrip().lower() == 'start trip':
-            send_message(sender_id, 'what would you like to call this trip?')
+            send_message(sender_id, 'What would you like to call this trip?')
             _state[sender_id] = 0.5
         else:
-            send_message(sender_id, "that's not a valid command nyaa >:(")
+            send_message(sender_id, "That's not a valid command nyaa >:(")
     elif user_state == 0.5:
         name = message_text.rstrip()
         trip = Trip(name, sender_id)
@@ -153,26 +155,26 @@ def handle_text(sender_id, user_state, message_text):
             all_trips[sender_id] = [trip]
         else:
             all_trips[sender_id] = all_trips[sender_id].append(trip)
-        send_message(sender_id, 'where would you like to go? send a location pin owo')
+        send_message(sender_id, 'Mrow ~ where would you like to go? Send a location pin!')
     # destination entered, awaiting dates
     elif user_state == 2:
         dates = message_text.rstrip().split(" ")
         if len(dates) != 2:
-            send_message(sender_id, "please enter two dates >:(")
+            send_message(sender_id, "Please enter two dates >:(")
         else:
             try:
                 start_date = datetime.strptime(dates[0], '%m/%d/%y')
                 end_date = datetime.strptime(dates[1], '%m/%d/%y')
             except ValueError:
-                send_message(sender_id, "please format your dates correctly baka >:(")
+                send_message(sender_id, "Please format your dates correctly >:(")
             else:
                 if end_date < start_date:
-                    send_message(sender_id, "aho, you can't go back in time >:(")
+                    send_message(sender_id, "Aho, you can't go back in time >:(")
                 else:
                     # store dates
                     _current_logistics[sender_id]["start_date"] = start_date.strftime("20%y-%m-%d")
                     _current_logistics[sender_id]["end_date"] = end_date.strftime("20%y-%m-%d")
-                    send_message(sender_id, "would you like to search for flights or points of interest?")
+                    send_message(sender_id, "Great! Would you like to search for flights or points of interest?")
                     _state[sender_id] = 3 
     # flights or PoI?
     elif user_state == 3:
@@ -191,7 +193,7 @@ def handle_text(sender_id, user_state, message_text):
                     ("Here are your top 3 direct flight choices:\n" + results[i]) if i == 0 else results[i]
                 )
         elif 'poi' in message_text.lower() or 'points of interest' in message_text.lower():
-            send_message(sender_id, "what is the maximum distance (in miles) you are willing to travel from your destination pin?")
+            send_message(sender_id, "What is the maximum distance (in miles) you are willing to travel from your destination pin?")
             _state[sender_id] = 3.5
     # setting PoI radius
     elif user_state == 3.5:
@@ -215,7 +217,7 @@ def handle_text(sender_id, user_state, message_text):
                 )
             send_message(
                 sender_id,
-                'enter:\n' +
+                'Enter:\n' +
                 '\t"more <num>" to learn more about point of interest <num>\n' +
                 '\t"add <num>" to add point of interest <num> to the trip\n' +
                 '\t"stop add" to finish adding points of interest'
@@ -230,14 +232,14 @@ def handle_text(sender_id, user_state, message_text):
                 _current_logistics[sender_id]["poi_id"] = int(command[1]) - 1
                 send_message(
                     sender_id,
-                    'when would you like to visit? (format as "MM/DD/YY HH:MM AM or PM")'
+                    'When would you like to visit? (format as "MM/DD/YY HH:MM AM or PM")'
                 )
                 _state[sender_id] = 4.5
             else:
-                send_message(sender_id, "please enter location index as a number")
+                send_message(sender_id, "Please enter location index as a number")
                 send_message(
                     sender_id,
-                    'enter:\n' +
+                    'Enter:\n' +
                     '\t"more <num>" to learn more about point of interest <num>\n' +
                     '\t"add <num>" to add point of interest <num> to the trip\n' +
                     '\t"stop add" to finish adding points of interest'
@@ -253,33 +255,40 @@ def handle_text(sender_id, user_state, message_text):
                 for text in split_description:
                     send_message(sender_id, text)
             else:
-                send_message(sender_id, "please enter location index as a number")
+                send_message(sender_id, "Please enter location index as a number")
             send_message(
             sender_id,
-                'enter:\n' +
+                'Enter:\n' +
                 '\t"more <num>" to learn more about point of interest <num>\n' +
                 '\t"add <num>" to add point of interest <num> to the trip\n' +
                 '\t"stop add" to finish adding points of interest'
             )
 
         elif command[0] == "stop" and command[1] == "add":
-            send_message(sender_id, "your schedule is as follows:")
+            send_message(sender_id, "Your schedule is as follows:")
             for i in xrange(len(current_trip[sender_id].visits)):
                 poi_entry = current_trip[sender_id].visits[i]
                 send_message(sender_id, poi_entry.location + poi_entry.time.strftime(" on %b %d, %Y at %I:%M %p"))
-            send_message(sender_id, "enjoy your trip! itterasshai ~")
+            send_message(sender_id, "Enjoy your trip! Hope it's as purrfect as me ≧☉_☉≦")
             _state[sender_id] = 5
     elif user_state == 4.5:
         try:
             date = datetime.strptime(message_text.rstrip(), '%m/%d/%y %I:%M %p')
         except ValueError:
-            send_message(sender_id, "please format your dates correctly baka >:(")
+            send_message(sender_id, "Please format your dates correctly >:(")
         else:
             poi_id = _current_logistics[sender_id]["poi_id"]
             poi = _current_logistics[sender_id]["points"][poi_id]["title"]
             current_trip[sender_id].add_location(poi, date)
-            send_message(sender_id, poi + " has been added sugoi!")
+            send_message(sender_id, poi + " has been added!")
             _state[sender_id] = 4
+            send_message(sender_id,
+                'enter:\n' +
+                '\t"more <num>" to learn more about point of interest <num>\n' +
+                '\t"add <num>" to add point of interest <num> to the trip\n' +
+                '\t"stop add" to finish adding points of interest'
+            )
+
     elif user_state == 5.5:
         answer = message_text.rstrip().lower()
         _current_logistics[sender_id]['current_poi'].add_feedback(_current_logistics[sender_id]['type'], answer)
@@ -302,16 +311,16 @@ def handle_attachments(sender_id, user_state, message):
             # store destination location
             _current_logistics[sender_id] = {"destination" : (location["lat"], location["long"])}
             send_message(sender_id, 
-                "your desired destination is (" + str(location["lat"]) + ", " + str(location["long"]) + ").\n\n" + 
-                'where will you be traveling from?')
+                "Your desired destination is (" + str(location["lat"]) + ", " + str(location["long"]) + ").\n\n" + 
+                'Where will you be traveling from?')
         elif user_state == 1:
             location = message["attachments"][0]["payload"]["coordinates"]
             _state[sender_id] = 2
             # store origin location
             _current_logistics[sender_id]["origin"] = (location["lat"], location["long"])
             send_message(sender_id, 
-                "your desired origin is (" + str(location["lat"]) + ", " + str(location["long"]) + ").\n\n" + 
-                'what are your preferred leaving and returning dates? (format as "MM/DD/YY MM/DD/YY")')
+                "Your desired origin is (" + str(location["lat"]) + ", " + str(location["long"]) + ").\n\n" + 
+                'What are your preferred leaving and returning dates? (format as "MM/DD/YY MM/DD/YY")')
 
 
 
