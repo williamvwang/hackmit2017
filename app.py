@@ -197,7 +197,7 @@ def handle_text(sender_id, user_state, message_text):
                 )
                 split_description = (more_poi["long_description"][0 + i: 600 + i] for i in range(0, len(more_poi["long_description"]), 600))
                 for text in split_description:
-                    send_message(text)
+                    send_message(sender_id, text)
             else:
                 send_message(sender_id, "please enter location index as a number")
         elif command[0] == "stop" and command[1] == "add":
