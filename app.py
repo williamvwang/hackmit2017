@@ -3,7 +3,6 @@ import sys
 import json
 import threading
 import time
-import random
 import requests
 from flask import Flask, request
 from datetime import datetime
@@ -114,17 +113,17 @@ schedule_thread = threading.Thread(target = run_schedule)
 schedule_thread.start()
 
 def format_flight(result):
-    outbound_flight = result["itineraries"]["outbound"][0]
+    outbound_flight = result["itineraries"][0]["outbound"]["flights"][0]
     outbound_time = outbound_flight["departs_at"]
     outbound_loc = outbound_flight["origin"]["airport"]
     outbound_dest = outbound_flight["destination"]["airport"]
-    outbound_flightnum = " ".join(outbound_flight["marketing_airline"], outbound_flight["flight_number"])
+    outbound_flightnum = outbound_flight["marketing_airline"] + " " + outbound_flight["flight_number"]
 
-    inbound_flight = result["itineraries"]["inbound"][0]
+    inbound_flight = result["itineraries"][0]["inbound"]["flights"][0]
     inbound_time = inbound_flight["departs_at"]
     inbound_loc = inbound_flight["origin"]["airport"]
     inbound_dest = inbound_flight["destination"]["airport"]
-    inbound_flightnum = " ".join(inbound_flight["marketing_airline"], inbound_flight["flight_number"])
+    inbound_flightnum = inbound_flight["marketing_airline"] + " " + inbound_flight["flight_number"]
 
     total_price = result["fare"]["total_price"]
 
@@ -138,7 +137,7 @@ def format_flight(result):
 def handle_text(sender_id, user_state, message_text):
     # start anew
     if user_state == -1:
-        send_message(sender_id, 'Meow ~ I am TravelCat! \nTo start planning a trip, say "start trip" ≧☉_☉≦')
+        send_message(sender_id, 'Meow ~ I am TravelCat! \nTo start planning a trip, say "start trip"')
         _state[sender_id] = 0
     # user is greeted
     elif user_state == 0:
@@ -179,7 +178,7 @@ def handle_text(sender_id, user_state, message_text):
     # flights or PoI?
     elif user_state == 3:
         if 'flights' in message_text.lower():
-            flights = findFlights(
+            flights = find_flights(
                 _current_logistics[sender_id]["origin"][0], _current_logistics[sender_id]["origin"][1],
                 _current_logistics[sender_id]["destination"][0], _current_logistics[sender_id]["destination"][1],
                 _current_logistics[sender_id]["start_date"], _current_logistics[sender_id]["end_date"]
@@ -269,7 +268,7 @@ def handle_text(sender_id, user_state, message_text):
             for i in xrange(len(current_trip[sender_id].visits)):
                 poi_entry = current_trip[sender_id].visits[i]
                 send_message(sender_id, poi_entry.location + poi_entry.time.strftime(" on %b %d, %Y at %I:%M %p"))
-            send_message(sender_id, "Enjoy your trip! Hope it's as purrfect as me ≧☉_☉≦")
+            send_message(sender_id, "Enjoy your trip! Hope it's as purrfect as me")
             _state[sender_id] = 5
     elif user_state == 4.5:
         try:
@@ -311,7 +310,7 @@ def handle_attachments(sender_id, user_state, message):
             # store destination location
             _current_logistics[sender_id] = {"destination" : (location["lat"], location["long"])}
             send_message(sender_id, 
-                "Your desired destination is (" + str(location["lat"]) + ", " + str(location["long"]) + ").\n\n" + 
+                'Arigatou nyaa!\n\n' + 
                 'Where will you be traveling from?')
         elif user_state == 1:
             location = message["attachments"][0]["payload"]["coordinates"]
@@ -319,7 +318,7 @@ def handle_attachments(sender_id, user_state, message):
             # store origin location
             _current_logistics[sender_id]["origin"] = (location["lat"], location["long"])
             send_message(sender_id, 
-                "Your desired origin is (" + str(location["lat"]) + ", " + str(location["long"]) + ").\n\n" + 
+                'Thank mew very much!\n\n' + 
                 'What are your preferred leaving and returning dates? (format as "MM/DD/YY MM/DD/YY")')
 
 
@@ -419,8 +418,8 @@ def find_airport(lat, lon):
 
 def find_flights(lat_start, long_start, lat_end, long_end, start_date, end_date):
     low_fare_url = 'https://api.sandbox.amadeus.com/v1.2/flights/low-fare-search'
-    start_airport = findAirport(lat_start, long_start)
-    end_airport = findAirport(lat_end, long_end)
+    start_airport = find_airport(lat_start, long_start)
+    end_airport = find_airport(lat_end, long_end)
     payload = {
         'apikey': amadeus_key,
         'origin': start_airport,
