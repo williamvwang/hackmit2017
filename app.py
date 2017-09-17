@@ -6,6 +6,7 @@ import requests
 from flask import Flask, request
 
 app = Flask(__name__)
+app.config.from_pyfile('settings.cfg')
 
 
 @app.route('/', methods=['GET'])
