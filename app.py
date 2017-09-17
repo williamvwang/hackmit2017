@@ -261,7 +261,7 @@ def handle_text(sender_id, user_state, message_text):
             current_trip[sender_id].add_location(poi, date)
             send_message(sender_id, poi + " has been added!")
             _state[sender_id] = 4
-            sender_id,
+            send_message(sender_id,
                 'enter:\n' +
                 '\t"more <num>" to learn more about point of interest <num>\n' +
                 '\t"add <num>" to add point of interest <num> to the trip\n' +
