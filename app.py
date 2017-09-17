@@ -15,21 +15,21 @@ amadeus_key = app.config["AMADEUS_API_KEY"]
 
 class POI:
 
-	def __init__(self, location, time):
-		self.location = location
-		self.time = time
+    def __init__(self, location, time):
+        self.location = location
+        self.time = time
         self.completed = False
-		self.feedback = {
-			'emotion': '',
-			'adjective':'',
-			'memory':''
-		}
+        self.feedback = {
+            'emotion': '',
+            'adjective': '',
+            'memory': ''
+        }
 
 class Trip:
 
-	def __init__(self, name):
-		self.tripName = name
-		self.visits = []
+    def __init__(self, name):
+        self.tripName = name
+        self.visits = []
 
     def addLocation(self, location, time):
         poi = POI(location, time)
