@@ -32,7 +32,7 @@ class Trip:
         self.visits = []
         self.user = user_id
 
-    def addLocation(self, location, time):
+    def add_location(self, location, time):
         poi = POI(location, time)
         visits.append(poi)
         visits.sort(key = lambda x: x.time)
@@ -164,7 +164,7 @@ def handle_text(sender_id, user_state, message_text):
                 _current_logistics[sender_id]["poi_id"] = int(command[1])
                 send_message(
                     sender_id,
-                    "when would you like to visit? (format as MM/DD/YY HH:MM)"
+                    'when would you like to visit? (format as "MM/DD/YY HH:MM AM or PM")'
                 )
                 _state[sender_id] = 4.5
             else:
@@ -185,7 +185,19 @@ def handle_text(sender_id, user_state, message_text):
                 send_message(sender_id, poi_entry.location + poi_entry.time.strftime(" on %b %d, %Y at %I:%M %p"))
             send_message(sender_id, "enjoy your trip!")
             _state[sender_id] = 5
-
+    elif user_state == 4.5:
+        try:
+            date = datetime.strptime(message_text.rstrip(), '%m/%d/%y %I:%M %p')
+        except ValueError:
+            send_message(sender_id, "please format your dates correctly baka >:(")
+        else:
+            poi_id = _current_logistics[sender_id]["poi_id"]
+            poi = _current_logistics[sender_id]["points"][poi_id]["title"]
+            current_trip[sender_id].add_location(poi, date)
+            send_message(sender_id, poi + " has been added sugoi!")
+            _state[sender_id] = 4
+        
+        
 
 
 def handle_attachments(sender_id, user_state, message):    
