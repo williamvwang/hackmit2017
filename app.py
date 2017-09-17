@@ -27,10 +27,10 @@ class POI:
             'memory': ''
         }
 
-    def add_feedback(classification, answer):
+    def add_feedback(self, classification, answer):
         self.feedback[classification] = answer
 
-    def mark_complete():
+    def mark_complete(self):
         self.completed = True
 
 class Trip:
