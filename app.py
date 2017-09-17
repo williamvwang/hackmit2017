@@ -6,7 +6,7 @@ import requests
 from flask import Flask, request
 
 app = Flask(__name__)
-app.config.from_pyfile('settings.cfg')
+app.config.from_pyfile('settings.cfg')  # load tokens from env
 
 
 @app.route('/', methods=['GET'])
@@ -14,9 +14,11 @@ def verify():
     # when the endpoint is registered as a webhook, it must echo back
     # the 'hub.challenge' value it receives in the query arguments
     if request.args.get("hub.mode") == "subscribe" and request.args.get("hub.challenge"):
-        if not request.args.get("hub.verify_token") == os.environ["VERIFY_TOKEN"]:
+        if not request.args.get("hub.verify_token") == app.config["VERIFY_TOKEN"]:
             return "Verification token mismatch", 403
         return request.args["hub.challenge"], 200
+
+    print app.config
 
     return "Hello world", 200
 
@@ -59,7 +61,7 @@ def send_message(recipient_id, message_text):
     log("sending message to {recipient}: {text}".format(recipient=recipient_id, text=message_text))
 
     params = {
-        "access_token": os.environ["PAGE_ACCESS_TOKEN"]
+        "access_token": app.config["PAGE_ACCESS_TOKEN"]
     }
     headers = {
         "Content-Type": "application/json"
