@@ -1,6 +1,8 @@
 import os
 import sys
 import json
+import threading
+import time
 import requests
 from flask import Flask, request
 from datetime import datetime
@@ -11,6 +13,47 @@ app.config.from_pyfile('settings.cfg')  # load tokens from env
 amadeus_key = app.config["AMADEUS_API_KEY"]
 
 @app.route('/', methods=['GET'])
+
+class POI:
+
+	def __init__(self, location, time):
+		self.location = location
+		self.time = time
+        self.completed = False
+		self.feedback = {
+			'emotion': '',
+			'adjective':'',
+			'memory':''
+		}
+
+class Trip:
+
+	def __init__(self, name):
+		self.tripName = name
+		self.visits = []
+
+    def addLocation(self, location, time):
+        poi = POI(location, time)
+        visits.append(poi)
+        visits.sort(key = lambda x: x.time)
+        
+nextEvent = None
+
+def runSchedule():
+    while True:
+        if nextEvent is None:
+            time.sleep(1)
+        else:
+            while datetime.datetime.now() < nextEvent.time:
+                time.sleep(1)
+            runEvent(nextEvent)
+            nextEvent = None
+
+scheduleThread = threading.Thread(target = runSchedule)
+scheduleThread.start()
+    
+		
+
 def verify():
     # when the endpoint is registered as a webhook, it must echo back
     # the 'hub.challenge' value it receives in the query arguments
