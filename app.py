@@ -8,6 +8,7 @@ from flask import Flask, request
 app = Flask(__name__)
 app.config.from_pyfile('settings.cfg')  # load tokens from env
 
+amadeus_key = app.config["AMADEUS_API_KEY"]
 
 @app.route('/', methods=['GET'])
 def verify():
@@ -95,6 +96,33 @@ def send_message(recipient_id, message_text):
 def log(message):  # simple wrapper for logging to stdout on heroku
     print str(message)
     sys.stdout.flush()
+
+def findFlights(lat_start, long_start, lat_end, long_end, start_date, end_date):
+    nearest_airport_url = 'https://api.sandbox.amadeus.com/v1.2/airports/nearest-relevant'
+    low_fare_url = 'https://api.sandbox.amadeus.com/v1.2/flights/low-fare-search'
+    payload = {
+        'apikey': amadeus_key,
+        'latitude': lat_start,
+        'longitude': long_start
+    }
+    r = requests.get(nearest_airport_url, params = payload)
+    data = r.get_json
+    start_airport = data[0]['airport']
+    payload['latitude'] = lat_end
+    payload['longitude'] = long_end
+    r = requests.get(nearest_airport_url, params = payload)
+    data = r.get_json
+    end_airport = data[0]['airport']
+    payload = {
+        'apikey': amadeus_key,
+        'origin': start_airport,
+        'destination': end_airport,
+        'departure_date': start_date,
+        'return_date': end_date
+    }
+    r = requests.get(low_fare_url, params = payload)
+    return r.get_json
+    
 
 
 if __name__ == '__main__':
