@@ -97,22 +97,19 @@ def log(message):  # simple wrapper for logging to stdout on heroku
     print str(message)
     sys.stdout.flush()
 
-def findFlights(lat_start, long_start, lat_end, long_end, start_date, end_date):
+def findAirport(lat, lon):
     nearest_airport_url = 'https://api.sandbox.amadeus.com/v1.2/airports/nearest-relevant'
-    low_fare_url = 'https://api.sandbox.amadeus.com/v1.2/flights/low-fare-search'
     payload = {
         'apikey': amadeus_key,
-        'latitude': lat_start,
-        'longitude': long_start
+        'latitude': lat,
+        'longitude': lon
     }
-    r = requests.get(nearest_airport_url, params = payload)
-    data = r.get_json
-    start_airport = data[0]['airport']
-    payload['latitude'] = lat_end
-    payload['longitude'] = long_end
-    r = requests.get(nearest_airport_url, params = payload)
-    data = r.get_json
-    end_airport = data[0]['airport']
+    return r.get_json[0]['airport']
+
+def findFlights(lat_start, long_start, lat_end, long_end, start_date, end_date):
+    low_fare_url = 'https://api.sandbox.amadeus.com/v1.2/flights/low-fare-search'
+    start_airport = findAirport(lat_start, long_start)
+    end_airport = findAirport(lat_end, long_end)
     payload = {
         'apikey': amadeus_key,
         'origin': start_airport,
@@ -122,6 +119,20 @@ def findFlights(lat_start, long_start, lat_end, long_end, start_date, end_date):
     }
     r = requests.get(low_fare_url, params = payload)
     return r.get_json
+
+def findPOI(lat, lon, radius):
+    geosearch_url = 'https://api.sandbox.amadeus.com/v1.2/points-of-interest/yapq-search-circle'
+    max_results = 5
+    payload = {
+        'apikey': amadeus_key,
+        'latitude': lat,
+        'longitude': lon,
+        'radius': radius,
+        'number_of_results': max_results
+    }
+    r = requests.get(geosearch_url, params = payload)
+    return r.get_json['points_of_interest']
+    
     
 
 
