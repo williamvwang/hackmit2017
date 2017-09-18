@@ -8,9 +8,8 @@ from flask import Flask, request
 from datetime import datetime
 
 app = Flask(__name__)
-app.config.from_pyfile('settings.cfg')  # load tokens from env
 
-amadeus_key = app.config["AMADEUS_API_KEY"]
+amadeus_key = os.environ["AMADEUS_API_KEY"]
 
 next_event = None
 
@@ -64,11 +63,11 @@ def verify():
     # when the endpoint is registered as a webhook, it must echo back
     # the 'hub.challenge' value it receives in the query arguments
     if request.args.get("hub.mode") == "subscribe" and request.args.get("hub.challenge"):
-        if not request.args.get("hub.verify_token") == app.config["VERIFY_TOKEN"]:
+        if not request.args.get("hub.verify_token") == os.environ["VERIFY_TOKEN"]:
             return "Verification token mismatch", 403
         return request.args["hub.challenge"], 200
 
-    return "Hello world", 200
+    return "Nyaa ~", 200
 
 # app states by userID
 _state = {}
@@ -414,7 +413,7 @@ def send_message(recipient_id, message_text):
     log("sending message to {recipient}: {text}".format(recipient=recipient_id, text=message_text.encode('utf-8')))
 
     params = {
-        "access_token": app.config["PAGE_ACCESS_TOKEN"]
+        "access_token": os.environ["PAGE_ACCESS_TOKEN"]
     }
     headers = {
         "Content-Type": "application/json"
