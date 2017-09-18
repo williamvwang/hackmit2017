@@ -95,6 +95,7 @@ def run_event():
     
 
 def select_next_event():
+    global next_event
     for key, value in current_trip.iteritems():
         for poi in value.visits:
             if next_event is None or (poi.time < next_event.time and not poi.completed):
@@ -137,6 +138,10 @@ def format_flight(result):
 # message handlers
 
 def handle_text(sender_id, user_state, message_text):
+    if message_text.rstrip().lower() == 'restart':
+        _state[sender_id] = -1
+        user_state = -1
+        send_message(sender_id, 'Restarted!')
     # start anew
     if user_state == -1:
         send_message(sender_id, 'Meow ~ I am TravelCat! \nTo start planning a trip, say "start trip"')
@@ -153,6 +158,8 @@ def handle_text(sender_id, user_state, message_text):
         trip = Trip(name, sender_id)
         current_trip[sender_id] = trip
         if sender_id not in all_trips:
+            all_trips[sender_id] = [trip]
+        elif all_trips[sender_id] is None:
             all_trips[sender_id] = [trip]
         else:
             all_trips[sender_id] = all_trips[sender_id].append(trip)
